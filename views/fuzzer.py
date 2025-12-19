@@ -144,7 +144,7 @@ class QwordSpinBox(QAbstractSpinBox):
         self._maximum = max_
         self.int_ = float if float_ else int
 
-        rx = QRegExp('-?\d{0,20}(?:\.\d{0,20})?' if float_ else '-?\d{0,20}')
+        rx = QRegExp(r'-?\d{0,20}(?:\.\d{0,20})?' if float_ else r'-?\d{0,20}')
         validator = QRegExpValidator(rx, self)
 
         self._lineEdit = QLineEdit(self)

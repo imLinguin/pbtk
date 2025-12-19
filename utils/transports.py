@@ -64,7 +64,7 @@ class Base64GET:
         base64 = urlsafe_b64encode(pb_data.SerializeToString()).decode('utf8')
         params = OrderedDict({self.pb_param: base64.strip('=')})
         params.update(tab_data)
-        url = sub('\{(\w+)\}', lambda i: my_quote(params.pop(i.group(1), '')), self.url)
+        url = sub(r'\{(\w+)\}', lambda i: my_quote(params.pop(i.group(1), '')), self.url)
         if params:
             url += '?' + urlencode(params, safe='~()*!.') # Do not escape '!' for readibility.
         return get(url, headers=USER_AGENT)
@@ -102,7 +102,7 @@ class GMapsAPIPrivate:
     def perform_request(self, pb_data, tab_data):
         params = OrderedDict({self.pb_param: proto_url_encode(pb_data)})
         params.update(tab_data)
-        url = sub('\{(\w+)\}', lambda i: my_quote(params.pop(i.group(1), '')), self.url)
+        url = sub(r'\{(\w+)\}', lambda i: my_quote(params.pop(i.group(1), '')), self.url)
         if params:
             url += '?' + urlencode(params, safe='~()*!.') # Do not escape '!' for readibility.
         return get(url, headers=USER_AGENT)
@@ -126,7 +126,7 @@ class GMapsAPIPublic:
         return self.rebuild_qs(sample)
     
     def parse_qs(self, sample):
-        pb = match('(?:&?\d[^&=]+)*', sample)
+        pb = match(r'(?:&?\d[^&=]+)*', sample)
         return OrderedDict([(pb.group(0), ''),
                             *parse_qsl(sample[pb.end() + 1:], True)])
     

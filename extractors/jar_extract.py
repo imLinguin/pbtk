@@ -146,10 +146,10 @@ def handle_jar(path):
             
             elif b'Unexp.EOF' in binr:
                 code = jar.decomp(cls, True).raw
-                protobuftype_cls = search('public \w+\(([\w.$]+) \w+\)', code).group(1)
+                protobuftype_cls = search(r'public \w+\(([\w.$]+) \w+\)', code).group(1)
                 
                 default_consts = {}
-                for prop, const in findall('(\w+) = new Boolean\((\w+)\)', code):
+                for prop, const in findall(r'(\w+) = new Boolean\((\w+)\)', code):
                     default_consts[cls + '.' + prop] = const
                 
                 while pkg in pkg_to_j2me_protobuftype:
@@ -181,7 +181,7 @@ def handle_jar(path):
             # Search for metadata descriptors
             if b'.proto\x12' in binr or b'.protodevel\x12' in binr:
                 code = jar.decomp(cls, True).raw
-                code = sub('",\s+"', '', code, flags=MULTILINE)
+                code = sub(r'",\s+"', '', code, flags=MULTILINE)
                 meta = search(r'"(\\n.+?\.proto.+)"', code)
                 if meta:
                     meta = meta.group(1).encode('latin1')
@@ -317,7 +317,7 @@ def extract_lite(jar, cls, enums, gen_classes, codedinputstream, codedoutputstre
                     lazy_start, (lazy_tag, lazy_end) = label_to_val.pop(0)
                     
                     if lazy_tag and lazy_tag >> 3 not in fields:
-                        lazy_obj = search('([\w$.]+) [\w$]+ = new ', code.raw[lazy_start:lazy_end])
+                        lazy_obj = search(r'([\w$.]+) [\w$]+ = new ', code.raw[lazy_start:lazy_end])
                         fenumormsg = None
                         if lazy_obj and lazy_obj.group(1) in gen_classes:
                             fenumormsg = lazy_obj.group(1)
@@ -397,7 +397,7 @@ def extract_lite(jar, cls, enums, gen_classes, codedinputstream, codedoutputstre
                     return
                 
                 if not fenumormsg and ftype in ('group', 'bytes'):
-                    msg_obj = search('([\w$.]+) [\w$]+ = new ', case)
+                    msg_obj = search(r'([\w$.]+) [\w$]+ = new ', case)
                     
                     if msg_obj and msg_obj.group(1) in gen_classes:
                         fenumormsg = msg_obj.group(1)
@@ -425,7 +425,7 @@ def extract_lite(jar, cls, enums, gen_classes, codedinputstream, codedoutputstre
     while label_to_val:
         lazy_start, (lazy_tag, lazy_end) = label_to_val.pop(0)
         if lazy_tag and lazy_tag >> 3 not in fields:
-            lazy_obj = search('([\w$.]+) [\w$]+ = new ', code.raw[lazy_start:lazy_end])
+            lazy_obj = search(r'([\w$.]+) [\w$]+ = new ', code.raw[lazy_start:lazy_end])
             fenumormsg = None
             if lazy_obj and lazy_obj.group(1) in gen_classes:
                 fenumormsg = lazy_obj.group(1)
@@ -447,7 +447,7 @@ def extract_lite(jar, cls, enums, gen_classes, codedinputstream, codedoutputstre
     for start, (call, _) in code.method_calls.items():
         call_ret, call_obj, call_name, call_args = call
         
-        has_constant = search('\(\d+', code.raw[start:].split('\n')[0]) or search('\([a-zA-Z_]\w*, \d+', code.raw[start:].split('\n')[0])
+        has_constant = search(r'\(\d+', code.raw[start:].split('\n')[0]) or search(r'\([a-zA-Z_]\w*, \d+', code.raw[start:].split('\n')[0])
         
         if call_obj in [codedoutputstream, *out_additional_cls, *map_entry_cls] and \
            (has_constant or take_packed):
@@ -473,17 +473,17 @@ def extract_lite(jar, cls, enums, gen_classes, codedinputstream, codedoutputstre
             cond = code.raw[cond_start:cond_end]
             callee = None
             
-            has_constant = search('\(\d+', cond) or search('\([a-zA-Z_]\w*, \d+', cond)
+            has_constant = search(r'\(\d+', cond) or search(r'\([a-zA-Z_]\w*, \d+', cond)
             
             separate_tag = False
             if has_constant:
                 # Parse the field number from method arguments
                 shift = False
-                fnumber = search('\((\d+), ', cond)
+                fnumber = search(r'\((\d+), ', cond)
                 if not fnumber:
-                    fnumber = search('(?<!put)\([a-zA-Z_]\w*, (\d+)', cond)
+                    fnumber = search(r'(?<!put)\([a-zA-Z_]\w*, (\d+)', cond)
                 if not fnumber:
-                    fnumber = search('\((\d+)\)', cond)
+                    fnumber = search(r'\((\d+)\)', cond)
                     separate_tag = True
                     assert fnumber
                     callee = jar.decomp_func(call) + cond
@@ -510,7 +510,7 @@ def extract_lite(jar, cls, enums, gen_classes, codedinputstream, codedoutputstre
             if from_condition:
                 cond_line = cond.split('\n')[0].strip()
                 if ';' in cond_line:
-                    cond_line = sub('^[\w\s$]+', '', cond_line.split(';')[1])
+                    cond_line = sub(r'^[\w\s$]+', '', cond_line.split(';')[1])
                 cond_lines[cond_line] = fnumber
                 assert 'int ' not in cond_line
             
@@ -555,29 +555,29 @@ def extract_lite(jar, cls, enums, gen_classes, codedinputstream, codedoutputstre
             
             if not var or (has_constant and not shift and not is_map_continuation):
                 var = None
-                regexps = [' < ([\w$]+)\.(?:size|length)',
-                          '([\w$]+)\.(?:size\(\)|length) > ',
-                          ' >= ([\w$]+)\.(?:size\(\)|length)',
-                         ['([\w$]+)\(\)\.(?:size\(\)|length)', 'return ([a-zA-Z_][\w$]*);', 'return new [\w.$]+\(([a-zA-Z_][\w$]*),'],
-                          'if\(([\w$]+) [!=]= null\)',
-                          'if\(\!([\w$]+)\..+?\(\)\)',
-                          '(?:unmodifiableMap|Arrays\.equals)\(([a-zA-Z_][\w$]*)',
-                          'Bits\((?:\(+[\w.]+\))?([a-zA-Z_][\w$]*)\)',
-                          '([a-zA-Z_][\w$]*)\.(?:getMap|entrySet|iterator)\(',
-                         ['([a-zA-Z_][\w$]*)\(\)\.(?:getMap|entrySet|iterator)\(', 'return ([a-zA-Z_][\w$]*);'],
-                          ' = \(java\.lang\.String\)([a-zA-Z_][\w$]*)',
-                          ', \(java.+?\)([a-zA-Z_][\w$]*)[).]',
-                         ['\(\d+, ([a-zA-Z_][\w$]*)\(\)+\)', ' = \(.+?\)([a-zA-Z_][\w$]*);', 'return ([a-zA-Z_][\w$]*);', ' = ([a-zA-Z_][\w$]*);'],
-                          '\s+([a-zA-Z_][\w$]*)\.[\w$]+\(\);',
-                          '\d+, [\w$]+\.\w+\(([a-zA-Z_][\w$]*)\)',
-                          ', ([a-zA-Z_][\w$]*)[).]',
-                          '(?<!flag)(?<!flag\d) = ([a-zA-Z_][\w$]*);',
-                          ' = ([a-zA-Z_][\w$]*)\[',
-                          ' = \(.+?\)([a-zA-Z_][\w$]*)',
-                          ' = \(\(.+?\)([a-zA-Z_][\w$]*)\)\.',
-                          ' = ([a-zA-Z_][\w$]*);',
-                          ', \(.+?\)([a-zA-Z_][\w$]*)[).]',
-                          '\(\!?([a-zA-Z_][\w$]*)\)']
+                regexps = [r' < ([\w$]+)\.(?:size|length)',
+                          r'([\w$]+)\.(?:size\(\)|length) > ',
+                          r' >= ([\w$]+)\.(?:size\(\)|length)',
+                         [r'([\w$]+)\(\)\.(?:size\(\)|length)', r'return ([a-zA-Z_][\w$]*);', r'return new [\w.$]+\(([a-zA-Z_][\w$]*),'],
+                          r'if\(([\w$]+) [!=]= null\)',
+                          r'if\(\!([\w$]+)\..+?\(\)\)',
+                          r'(?:unmodifiableMap|Arrays\.equals)\(([a-zA-Z_][\w$]*)',
+                          r'Bits\((?:\(+[\w.]+\))?([a-zA-Z_][\w$]*)\)',
+                          r'([a-zA-Z_][\w$]*)\.(?:getMap|entrySet|iterator)\(',
+                         [r'([a-zA-Z_][\w$]*)\(\)\.(?:getMap|entrySet|iterator)\(', r'return ([a-zA-Z_][\w$]*);'],
+                          r' = \(java\.lang\.String\)([a-zA-Z_][\w$]*)',
+                          r', \(java.+?\)([a-zA-Z_][\w$]*)[).]',
+                         [r'\(\d+, ([a-zA-Z_][\w$]*)\(\)+\)', r' = \(.+?\)([a-zA-Z_][\w$]*);', r'return ([a-zA-Z_][\w$]*);', r' = ([a-zA-Z_][\w$]*);'],
+                          r'\s+([a-zA-Z_][\w$]*)\.[\w$]+\(\);',
+                          r'\d+, [\w$]+\.\w+\(([a-zA-Z_][\w$]*)\)',
+                          r', ([a-zA-Z_][\w$]*)[).]',
+                          r'(?<!flag)(?<!flag\d) = ([a-zA-Z_][\w$]*);',
+                          r' = ([a-zA-Z_][\w$]*)\[',
+                          r' = \(.+?\)([a-zA-Z_][\w$]*)',
+                          r' = \(\(.+?\)([a-zA-Z_][\w$]*)\)\.',
+                          r' = ([a-zA-Z_][\w$]*);',
+                          r', \(.+?\)([a-zA-Z_][\w$]*)[).]',
+                          r'\(\!?([a-zA-Z_][\w$]*)\)']
                 
                 for regex in regexps:
                     if isinstance(regex, str): # Regular case
@@ -602,14 +602,14 @@ def extract_lite(jar, cls, enums, gen_classes, codedinputstream, codedoutputstre
                 
                 # Search for the line defining the default value for this variable
                 
-                fdefault = findall('\s+(?:super\.)?%s(?:\[\])* = (.+?);' % escape(var), code.raw, flags=MULTILINE)
+                fdefault = findall(r'\s+(?:super\.)?%s(?:\[\])* = (.+?);' % escape(var), code.raw, flags=MULTILINE)
                 if not fdefault:
                     fdefault = ['null']
                 fdefault = next((i for i in fdefault if i not in ('0', 'null', 'false')), fdefault[0])
                 
                 # Check its type for an embedded message or group, too
                 
-                fdefault_type = search('([\w.$]+?) %s(?:\[\])*(?: =|;)' % escape(var), code.raw, flags=MULTILINE)
+                fdefault_type = search(r'([\w.$]+?) %s(?:\[\])*(?: =|;)' % escape(var), code.raw, flags=MULTILINE)
                 if fdefault_type and fdefault_type.group(1) in gen_classes:
                     fenumormsg = fdefault_type.group(1)
                     if ftype == 'bytes':
@@ -627,10 +627,10 @@ def extract_lite(jar, cls, enums, gen_classes, codedinputstream, codedoutputstre
             
             # Look for MapEntryLite.serializeTo() or MapEntry.newBuilderForType()
             else:
-                map_cls = search('([\w.$]+)\.[\w$]+$', code.raw[:start].split('\n')[-1])
+                map_cls = search(r'([\w.$]+)\.[\w$]+$', code.raw[:start].split('\n')[-1])
                 map_cls = map_cls.group(1) if map_cls else call_obj
                 if call_obj.startswith(map_cls):
-                    map_cls = search(' = ([\w$.]+)\.\w+;', cond) # Handle inlined call
+                    map_cls = search(r' = ([\w$.]+)\.\w+;', cond) # Handle inlined call
                     if not map_cls:
                         fields[fnumber] = (flabel, ftype, fenumormsg, fdefault, None)
                         continue
@@ -653,7 +653,7 @@ def extract_lite(jar, cls, enums, gen_classes, codedinputstream, codedoutputstre
     Optional step 3 (for Lite-generated code only): look for 'case IS_INITIALIZED:'
     """
     
-    case = split(' == 1\)[\n{ ]+return DEFAULT_INSTANCE;(?:[\n ]+\}\n)?', code.raw, flags=MULTILINE)
+    case = split(r' == 1\)[\n{ ]+return DEFAULT_INSTANCE;(?:[\n ]+\}\n)?', code.raw, flags=MULTILINE)
     if len(case) > 1:
         case = case[1]
         case = case.split('\n_')[0]
@@ -788,7 +788,7 @@ def create_enum(jar, enums, fenum, msg_path_to_obj):
         
         enum = EnumDescriptorProto()
         enum.name = fenum.split('.')[-1]
-        for fname, fnumber in findall('(?:[\w.$]+|<init>)\("(.+?)", \d+, (-?\d+)[LDF]?\);', enum_code):
+        for fname, fnumber in findall(r'(?:[\w.$]+|<init>)\("(.+?)", \d+, (-?\d+)[LDF]?\);', enum_code):
             if (fname, fnumber) != ('UNRECOGNIZED', '-1'):
                 value = enum.value.add()
                 value.name = fname
@@ -859,18 +859,18 @@ def extract_j2me(jar, cls, enums, gen_classes_j2me, protobuftype_cls, consts,
     First step: look for calls to ProtoBufType.addElement(int, int, Object)
     """
     
-    code = sub('(?:new )?[\w$.]+\((-?\d+)[LDF]?\)', r'\1', code.raw)
+    code = sub(r'(?:new )?[\w$.]+\((-?\d+)[LDF]?\)', r'\1', code.raw)
     fields_for_msg = defaultdict(str)
     
-    for var in findall('(\w+) = new ', code):
+    for var in findall(r'(\w+) = new ', code):
         fields_for_msg[var]
     
     while True:
         # Case 1: handle embedded groups
-        decl = list(finditer('(\(new \w+\(("\w+")\)\)(?=((?:\.\w+\(\d+, \d+, .+?\))+)\)))', code))[::-1]
+        decl = list(finditer(r'(\(new \w+\(("\w+")\)\)(?=((?:\.\w+\(\d+, \d+, .+?\))+)\)))', code))[::-1]
         if not decl:
             # Case 2: general case, handle messages
-            decl = list(finditer('( (\w+)(?=((?:\.\w+\(\d+, \d+, .+?\))+);))', code))
+            decl = list(finditer(r'( (\w+)(?=((?:\.\w+\(\d+, \d+, .+?\))+);))', code))
         if not decl:
             break
         prefix, var, fields = decl[0].groups()
@@ -882,7 +882,7 @@ def extract_j2me(jar, cls, enums, gen_classes_j2me, protobuftype_cls, consts,
                 var += '_'
         else:
             # If message, handle object variable reassignements
-            public_var = findall(' %s = ([a-zA-Z_][\w$]*);' % var, code[:decl[0].start()])
+            public_var = findall(r' %s = ([a-zA-Z_][\w$]*);' % var, code[:decl[0].start()])
             if public_var and public_var[-1] != 'null':
                 var = public_var[-1]
 
@@ -905,7 +905,7 @@ def extract_j2me(jar, cls, enums, gen_classes_j2me, protobuftype_cls, consts,
         message.name = var
 
         if fields:
-            for ftypeandlabel, fnumber, fdefaultormsg in findall('\.\w+\((\d+), (\d+), (.+?)\)', fields):
+            for ftypeandlabel, fnumber, fdefaultormsg in findall(r'\.\w+\((\d+), (\d+), (.+?)\)', fields):
                 field = message.field.add()
                 
                 # Use int32 instead of enum (we don't have enum contents),
