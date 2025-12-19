@@ -163,8 +163,7 @@ def load_proto_msgs(proto_path, ret_source_info=False):
         if next_import not in arg_proto_files:
             arg_proto_files.insert(0, next_import)
             with open(next_import) as fd:
-                for prior_import in reversed(findall('import(?:\s*weak|public)?\s*"(.+?)"\s*;', fd.read())):
-                    to_import.append(prior_import)
+                to_import.extend(reversed(findall('import(?:\s*weak|public)?\s*"(.+?)"\s*;', fd.read())))
     
     # Execute protoc and import the actual module from a tmp
     

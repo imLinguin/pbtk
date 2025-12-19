@@ -67,7 +67,7 @@ def pburl_extract(url):
     
     with TemporaryDirectory() as profile:
         cmd = [browser, '--remote-debugging-port=%d' % port, 'about:blank']
-        if temp_profile == True:
+        if temp_profile:
             cmd += ['--user-data-dir=' + profile, '--no-first-run', '--start-maximized', '--no-default-browser-check']
         
         chrome = Popen(cmd, stdout=DEVNULL, stderr=DEVNULL)
@@ -105,7 +105,7 @@ def pburl_extract(url):
             pbname.pop(0)
         if pbname[0] == 'preview':
             pbname.pop(0)
-        pbname = ''.join(map(lambda x: x[0].upper() + x[1:], pbname))
+        pbname = ''.join(x[0].upper() + x[1:] for x in pbname)
         pbname = sub('[^A-Za-z0-9]', '', pbname)
         pbname = {'Vt': 'VectorTown', 'S': 'Search'}.get(pbname, pbname)
         pbname_, tries = pbname, 0

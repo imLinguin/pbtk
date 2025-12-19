@@ -198,7 +198,7 @@ def handle_jar(path):
                     gen_classes[cls] = (pkg_to_codedinputstream[impl], pkg_to_codedoutputstream[impl])
         
             # Search for generated J2ME classes
-            for impl, (protobuftype_cls, consts) in pkg_to_j2me_protobuftype.items():
+            for _, (protobuftype_cls, consts) in pkg_to_j2me_protobuftype.items():
                 if b'(IILjava/lang/Object;)L%s;' % protobuftype_cls.replace('.', '/').encode('ascii') in binr and \
                    cls != protobuftype_cls:
                     gen_classes_j2me[cls] = (protobuftype_cls, consts)
@@ -297,7 +297,7 @@ def extract_lite(jar, cls, enums, gen_classes, codedinputstream, codedoutputstre
         call_ret, call_obj, call_name, call_args = call
         
         if call_obj in [codedinputstream, *map_entry_cls] \
-           and not (call_ret, call_args) == ('void', 'int'):
+           and (call_ret, call_args) != ('void', 'int'):
         
             if not in_switch:
                 # Look at the switch structure around the read*() calls:
@@ -355,7 +355,7 @@ def extract_lite(jar, cls, enums, gen_classes, codedinputstream, codedoutputstre
                     
                     # Look for enums
                     if ftype == 'uint32':
-                        for start2, (call2, end2) in code.method_calls.items():
+                        for start2, (call2, _) in code.method_calls.items():
                             _, call2_obj, _, _ = call2
                             
                             if label_start < start2 < label_end and call2_obj in enums:
@@ -387,12 +387,12 @@ def extract_lite(jar, cls, enums, gen_classes, codedinputstream, codedoutputstre
                 elif wire_type == 3:
                     ftype = 'group'
 
-                    for start2, (call2, end2) in code.method_calls.items():
+                    for start2, (call2, _) in code.method_calls.items():
                         _, call2_obj, _, _ = call2
                         
                         if label_start < start2 < label_end and call2_obj in gen_classes:
                             fenumormsg = call2_obj
-                            break                
+                            break
                 else:
                     return
                 
@@ -444,7 +444,7 @@ def extract_lite(jar, cls, enums, gen_classes, codedinputstream, codedoutputstre
     prev_cond_end = 0
     take_packed = False
     
-    for start, (call, end) in code.method_calls.items():
+    for start, (call, _) in code.method_calls.items():
         call_ret, call_obj, call_name, call_args = call
         
         has_constant = search('\(\d+', code.raw[start:].split('\n')[0]) or search('\([a-zA-Z_]\w*, \d+', code.raw[start:].split('\n')[0])
@@ -539,7 +539,7 @@ def extract_lite(jar, cls, enums, gen_classes, codedinputstream, codedoutputstre
             
             # Look for enums
             if ftype == 'int32':
-                for start2, (call2, end2) in code.method_calls.items():
+                for start2, (call2, _) in code.method_calls.items():
                     _, call2_obj, _, _ = call2
                     
                     if cond_start < start2 < cond_end and call2_obj in enums:
@@ -580,10 +580,10 @@ def extract_lite(jar, cls, enums, gen_classes, codedinputstream, codedoutputstre
                           '\(\!?([a-zA-Z_][\w$]*)\)']
                 
                 for regex in regexps:
-                    if type(regex) == str: # Regular case
+                    if isinstance(regex, str): # Regular case
                         var = search(regex, cond)
                     
-                    elif type(regex) == list: # Search inside a method
+                    elif isinstance(regex, list): # Search inside a method
                         func = search(regex[0], cond)
                         if func:
                             call_sig, _ = code.method_loc_calls[cond_start + func.start(1)]
@@ -761,7 +761,7 @@ def parse_default(field, ftype, fdefault):
         except (ValueError, SyntaxError):
             fdefault = None
     
-    if type(fdefault) is int:
+    if isinstance(fdefault, int):
         if ftype[0] != 'u' and ftype[:5] != 'fixed':
             if fdefault >> 63:
                 fdefault = c_long(fdefault).value

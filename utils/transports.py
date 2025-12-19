@@ -17,7 +17,7 @@ USER_AGENT = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 
     ui_tab = 'Headers',
     ui_data_form = 'hex strings'
 )
-class RawPOST():
+class RawPOST:
     def __init__(self, pb_param, url):
         self.url = url
     
@@ -42,7 +42,7 @@ my_quote = lambda x: quote_plus(str(x), safe='~()*!.')
     ui_tab = 'GET',
     ui_data_form = 'regular GET query strings'
 )
-class Base64GET():
+class Base64GET:
     def __init__(self, pb_param, url):
         self.pb_param = pb_param
         self.url = url.split('?')[0]
@@ -77,7 +77,7 @@ my_quote = lambda x: quote_plus(str(x), safe='~()*!.')
     ui_tab = 'GET',
     ui_data_form = 'regular GET query strings'
 )
-class GMapsAPIPrivate():
+class GMapsAPIPrivate:
     def __init__(self, pb_param, url):
         self.pb_param = pb_param
         self.url = url.split('?')[0]
@@ -113,7 +113,7 @@ class GMapsAPIPrivate():
     ui_tab = 'GET',
     ui_data_form = 'GET query strings copied as-is'
 )
-class GMapsAPIPublic():
+class GMapsAPIPublic:
     def __init__(self, pb_param, url):
         self.url = url.split('?')[0]
     
