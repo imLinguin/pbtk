@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-#-*- encoding: Utf-8 -*-
 from google.protobuf.descriptor_pb2 import FileDescriptorProto, DescriptorProto
 from collections import defaultdict, OrderedDict
 from re import sub
@@ -158,8 +157,8 @@ def nest_and_print_to_files(msg_path_to_obj, msg_to_referrers):
             
             for imported in msg_to_imports[msg]:
                 import_path = imported.split('$')[0].replace('.', '/') + '.proto'
-                if import_path != path and imported not in msg_to_topmost:
-                    if import_path not in file_obj.dependency:
+                if import_path != path and imported not in msg_to_topmost and \
+                    import_path not in file_obj.dependency:
                         file_obj.dependency.append(import_path)
 
             if isinstance(msg_obj, DescriptorProto):

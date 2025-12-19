@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-#-*- encoding: Utf-8 -*-
 from google.protobuf.descriptor_pb2 import DescriptorProto, FieldDescriptorProto
 from collections import OrderedDict
 from itertools import groupby
@@ -64,7 +63,7 @@ def parse_msg(desc, scopes, syntax):
         for val in enum.value:
             out2 += '%s = %s;\n' % (val.name, fmt_value(val.number, val.options))
         
-        if len(set(i.number for i in enum.value)) == len(enum.value):
+        if len({i.number for i in enum.value}) == len(enum.value):
             enum.options.ClearField('allow_alias')
         
         blocks[enum.name] = wrap_block('enum', out2, enum)
@@ -111,8 +110,8 @@ def parse_msg(desc, scopes, syntax):
     return out
 
 def fmt_value(val, options=None, desc=None, optarr=[]):
-    if type(val) != str:
-        if type(val) == bool:
+    if not isinstance(val, str):
+        if isinstance(val, bool):
             val = str(val).lower()
         elif desc and desc.enum_type:
             val = desc.enum_type.values_by_number[val].name
@@ -223,12 +222,12 @@ def wrap_block(type_, value, desc=None, name=None):
 def fmt_ranges(name, ranges):
     text = []
     for range_ in ranges:
-        if type(range_) != str and range_.end - 1 > range_.start:
+        if not isinstance(range_, str) and range_.end - 1 > range_.start:
             if range_.end < 0x20000000:
                 text.append('%d to %d' % (range_.start, range_.end - 1))
             else:
                 text.append('%d to max' % range_.start)
-        elif type(range_) != str:
+        elif not isinstance(range_, str):
             text.append(fmt_value(range_.start))
         else:
             text.append(fmt_value(range_))

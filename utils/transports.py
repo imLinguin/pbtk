@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-#-*- encoding: Utf-8 -*-
 from urllib.parse import quote_plus, urlencode, parse_qsl, urlparse, unquote
 from utils.pburl_decoder import proto_url_encode, proto_url_decode
 from base64 import urlsafe_b64decode, urlsafe_b64encode
@@ -18,7 +17,7 @@ USER_AGENT = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 
     ui_tab = 'Headers',
     ui_data_form = 'hex strings'
 )
-class RawPOST():
+class RawPOST:
     def __init__(self, pb_param, url):
         self.url = url
     
@@ -43,7 +42,7 @@ my_quote = lambda x: quote_plus(str(x), safe='~()*!.')
     ui_tab = 'GET',
     ui_data_form = 'regular GET query strings'
 )
-class Base64GET():
+class Base64GET:
     def __init__(self, pb_param, url):
         self.pb_param = pb_param
         self.url = url.split('?')[0]
@@ -65,7 +64,7 @@ class Base64GET():
         base64 = urlsafe_b64encode(pb_data.SerializeToString()).decode('utf8')
         params = OrderedDict({self.pb_param: base64.strip('=')})
         params.update(tab_data)
-        url = sub('\{(\w+)\}', lambda i: my_quote(params.pop(i.group(1), '')), self.url)
+        url = sub(r'\{(\w+)\}', lambda i: my_quote(params.pop(i.group(1), '')), self.url)
         if params:
             url += '?' + urlencode(params, safe='~()*!.') # Do not escape '!' for readibility.
         return get(url, headers=USER_AGENT)
@@ -78,7 +77,7 @@ my_quote = lambda x: quote_plus(str(x), safe='~()*!.')
     ui_tab = 'GET',
     ui_data_form = 'regular GET query strings'
 )
-class GMapsAPIPrivate():
+class GMapsAPIPrivate:
     def __init__(self, pb_param, url):
         self.pb_param = pb_param
         self.url = url.split('?')[0]
@@ -103,7 +102,7 @@ class GMapsAPIPrivate():
     def perform_request(self, pb_data, tab_data):
         params = OrderedDict({self.pb_param: proto_url_encode(pb_data)})
         params.update(tab_data)
-        url = sub('\{(\w+)\}', lambda i: my_quote(params.pop(i.group(1), '')), self.url)
+        url = sub(r'\{(\w+)\}', lambda i: my_quote(params.pop(i.group(1), '')), self.url)
         if params:
             url += '?' + urlencode(params, safe='~()*!.') # Do not escape '!' for readibility.
         return get(url, headers=USER_AGENT)
@@ -114,7 +113,7 @@ class GMapsAPIPrivate():
     ui_tab = 'GET',
     ui_data_form = 'GET query strings copied as-is'
 )
-class GMapsAPIPublic():
+class GMapsAPIPublic:
     def __init__(self, pb_param, url):
         self.url = url.split('?')[0]
     
@@ -127,7 +126,7 @@ class GMapsAPIPublic():
         return self.rebuild_qs(sample)
     
     def parse_qs(self, sample):
-        pb = match('(?:&?\d[^&=]+)*', sample)
+        pb = match(r'(?:&?\d[^&=]+)*', sample)
         return OrderedDict([(pb.group(0), ''),
                             *parse_qsl(sample[pb.end() + 1:], True)])
     

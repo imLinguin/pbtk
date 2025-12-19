@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-#-*- encoding: Utf-8 -*-
 from re import findall, MULTILINE, search, finditer, split, sub
 from subprocess import run, DEVNULL, PIPE, TimeoutExpired
 from tempfile import TemporaryDirectory
@@ -122,7 +121,7 @@ class ClassWrapper:
             annote = search('\n {4,}//(?:[* ] {0,3}[0-9]{1,5}){2}:.+(?:\n {4,}//.+)*', self.raw, flags=MULTILINE)
             if not annote:
                 break
-            self.annotes.extend(findall('<Method ([\w.$\[\]]+) ([\w.$]+)\.([\w$]+)\((.*)\)>', annote.group(0)))
+            self.annotes.extend(findall(r'<Method ([\w.$\[\]]+) ([\w.$]+)\.([\w$]+)\((.*)\)>', annote.group(0)))
             self.raw = self.raw[:annote.start()] + self.raw[annote.end():]
         
         # Parse package/extends directives
@@ -131,7 +130,7 @@ class ClassWrapper:
         if self.pkg:
             self.pkg = self.pkg.group(1)
         
-        self.extends = search(' extends ([\w.$]+)', self.raw) or ''
+        self.extends = search(r' extends ([\w.$]+)', self.raw) or ''
         if self.extends:
             self.extends = self.extends.group(1)
             
@@ -185,7 +184,7 @@ class ClassWrapper:
             
             # We see a method declaration
             if indent == cls_indent + 1 and line.strip().endswith(')'):
-                funcline = search('([\w.$]+) ([\w$]+)\((.*)\)', line)
+                funcline = search(r'([\w.$]+) ([\w$]+)\((.*)\)', line)
                 
                 if funcline and funcline.group(2) not in ('if', 'for', 'while', 'switch', 'catch', 'super', 'this', 'synchronized'):
                     ret, name, args = funcline.groups()
@@ -212,7 +211,7 @@ class ClassWrapper:
                     nostrings_line = sub(r'"(?:.*?[^"\\])?"', '""', line)
                     
                     # Store calls to local methods
-                    for match in finditer('(?<!new )(?<![\w.$])(\w+)\((?=([^;]+))', nostrings_line):
+                    for match in finditer(r'(?<!new )(?<![\w.$])(\w+)\((?=([^;]+))', nostrings_line):
                         if match.group(1) not in ('if', 'for', 'while', 'switch', 'catch', 'super', 'this', 'synchronized', 'getClass'):
                             (name, args), (call_start, call_end) = match.groups(), match.span()
                             
@@ -225,7 +224,7 @@ class ClassWrapper:
                                 method_loc_calls.append(call_sig)
                     
                     # Store calls to external methods
-                    for match in reversed(list(finditer('\.(\w+)\((?=([^;]+))', nostrings_line))):
+                    for match in reversed(list(finditer(r'\.(\w+)\((?=([^;]+))', nostrings_line))):
                         (name, args), (call_start, call_end) = match.groups(), match.span()
                         
                         call_sig = self.prototype_from_annote(name, args)
@@ -264,8 +263,8 @@ class ClassWrapper:
     def prototype_from_annote(self, name, args):
         # Perform minimal disambiguation
         has_args = args[0] != ')'
-        while search('\(.*?\)', args):
-            args = sub('\((.*?)\)', lambda x: sub('[^()]', '', x.group(1)), args)
+        while search(r'\(.*?\)', args):
+            args = sub(r'\((.*?)\)', lambda x: sub('[^()]', '', x.group(1)), args)
         num_commas = args.split(')')[0].count(',')
         
         annote = next((i for i, v in enumerate(self.annotes) if v[2] == name and \
@@ -346,7 +345,7 @@ class ClassWrapper:
         elif ' switch(' in next_lines: # Handling second switch construct
             in_switch = True
             switch_indent = next_lines.split('switch(')[0].split('\n')[-1]
-            switch_code = self.raw[:start] + split('break;\n%s\}' % switch_indent, self.raw[start:], flags=MULTILINE)[0]
+            switch_code = self.raw[:start] + split(r'break;\n%s\}' % switch_indent, self.raw[start:], flags=MULTILINE)[0]
             while True:
                 start = switch_code.find('case ', start + 1)
                 if start == -1:

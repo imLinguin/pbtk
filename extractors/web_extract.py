@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-#-*- encoding: Utf-8 -*-
 from urllib.parse import quote, quote_plus, unquote_plus, parse_qsl, urlencode
 from tempfile import TemporaryDirectory
 from subprocess import Popen, DEVNULL
@@ -68,7 +67,7 @@ def pburl_extract(url):
     
     with TemporaryDirectory() as profile:
         cmd = [browser, '--remote-debugging-port=%d' % port, 'about:blank']
-        if temp_profile == True:
+        if temp_profile:
             cmd += ['--user-data-dir=' + profile, '--no-first-run', '--start-maximized', '--no-default-browser-check']
         
         chrome = Popen(cmd, stdout=DEVNULL, stderr=DEVNULL)
@@ -99,14 +98,14 @@ def pburl_extract(url):
     for proto in list(proto_to_urls):
         # Determine .proto name based on endpoint URL
         pbname = min(proto_to_urls[proto], key=len)
-        pbname = sub('/contrib/\{contrib\}/[a-z]+/@', '/@', pbname)
-        pbname = sub('/([^/=]+[/=]|@)\{.+?\}(/\{.+?\})?', '', pbname)
+        pbname = sub(r'/contrib/\{contrib\}/[a-z]+/@', '/@', pbname)
+        pbname = sub(r'/([^/=]+[/=]|@)\{.+?\}(/\{.+?\})?', '', pbname)
         pbname = pbname.split('/')[3:]
         if pbname[0] in ('maps', 'rt') and len(pbname) > 1:
             pbname.pop(0)
         if pbname[0] == 'preview':
             pbname.pop(0)
-        pbname = ''.join(map(lambda x: x[0].upper() + x[1:], pbname))
+        pbname = ''.join(x[0].upper() + x[1:] for x in pbname)
         pbname = sub('[^A-Za-z0-9]', '', pbname)
         pbname = {'Vt': 'VectorTown', 'S': 'Search'}.get(pbname, pbname)
         pbname_, tries = pbname, 0
@@ -194,7 +193,7 @@ history.replaceState = wrap(history.replaceState);'''})
                 
                 send(ws, 'Debugger.evaluateOnCallFrame', {
                     'callFrameId': msg['callFrames'][0]['callFrameId'],
-                    'expression': '''
+                    'expression': r'''
 (function() {
     var objToName = new WeakMap();
     var specStringToName = {};
@@ -212,7 +211,7 @@ history.replaceState = wrap(history.replaceState);'''})
         var namer = namerGen();
         var namer_msg = namerGen();
         
-        var text = `${tab}message ${name.split('.').pop()} {\\n`;
+        var text = `${tab}message ${name.split('.').pop()} {\n`;
         tab += '    ';
         
         // console.log(JSON.stringify(['__INFO', typeof msg]));
@@ -302,7 +301,7 @@ history.replaceState = wrap(history.replaceState);'''})
                 nested_message_index++;
             }
             
-            text += `${tab}${label}${type} ${namer.next().value} = ${field_number};${comment}\\n`;
+            text += `${tab}${label}${type} ${namer.next().value} = ${field_number};${comment}\n`;
         }
         
         return `${text}${tab.slice(0, -4)}}\n`;
@@ -364,7 +363,7 @@ history.replaceState = wrap(history.replaceState);'''})
             for target in targets:
                 if target in src:
                     
-                    messageSpecStringVar, nestedMessagesSpecArrayVar = search('=a:\(this\.[\w$]+=a\.([\w$]+),this\.[\w$]+=a\.([\w$]+)\);(?:a=)?this\.', src).groups()
+                    messageSpecStringVar, nestedMessagesSpecArrayVar = search(r'=a:\(this\.[\w$]+=a\.([\w$]+),this\.[\w$]+=a\.([\w$]+)\);(?:a=)?this\.', src).groups()
                     before = src.split(target)[0]
                     sid_to_vars[sid] = messageSpecStringVar, nestedMessagesSpecArrayVar
                     
@@ -384,9 +383,9 @@ history.replaceState = wrap(history.replaceState);'''})
 def logUrl(url):
     url = sub('//www.google.[a-z]+', '//www.google.com', url)
     if '=!' in url:
-        datas = findall('(?<==)\!\d[^/?&]+', url)
+        datas = findall(r'(?<==)\!\d[^/?&]+', url)
     else:
-        datas = [i.strip('?&') for i in findall('\?(?:\d[^&]+&?)+', url)]
+        datas = [i.strip('?&') for i in findall(r'\?(?:\d[^&]+&?)+', url)]
     if not datas:
         return
     for data in sorted(datas, key=len, reverse=True):

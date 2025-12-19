@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-#-*- encoding: Utf-8 -*-
 from google.protobuf.descriptor import FieldDescriptor as fd
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 from urllib.parse import quote, unquote
@@ -45,7 +44,7 @@ def proto_url_decode(pburl, pbdesc, sep='!'):
 def consume(obj, pb, sep):
     while obj:
         field = obj.pop(0)
-        index, type_, val = match('(\d+)(\w)(.*)', field).groups()
+        index, type_, val = match(r'(\d+)(\w)(.*)', field).groups()
         type_ = types_dec[type_]
         
         if int(index) not in pb.DESCRIPTOR.fields_by_number:

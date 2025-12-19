@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-#-*- encoding: Utf-8 -*-
 from google.protobuf.descriptor_pb2 import FileDescriptorProto
 from google.protobuf.internal.decoder import _DecodeVarint
 
@@ -28,7 +27,7 @@ from utils.descpb_to_proto import descpb_to_proto
 @register_extractor(name = 'from_binary',
                     desc = 'Extract Protobuf metadata from binary file (*.dll, *.so...)')
 def walk_binary(binr):
-    if type(binr) == str:
+    if isinstance(binr, str):
         try:
             with open(binr, 'rb') as fd:
                 binr = fd.read()

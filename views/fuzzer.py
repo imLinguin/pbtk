@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-#-*- encoding: Utf-8 -*-
 from PyQt5.QtWidgets import QTreeWidgetItem, QLineEdit, QCheckBox, QAbstractSpinBox, QInputDialog, QMessageBox
 from PyQt5.QtCore import QUrl, Qt, pyqtSignal, QByteArray, QRegExp
 from PyQt5.QtWebEngineWidgets import QWebEngineView
@@ -116,7 +115,7 @@ class MyFrame(QWebEngineView):
             
             data = dec[:100000]
         
-        if type(data) == str:
+        if isinstance(data, str):
             data = data.encode('utf8')
         self.setContent(QByteArray(data), out_mime, QUrl(url))
         
@@ -139,13 +138,13 @@ class QwordSpinBox(QAbstractSpinBox):
     valueChanged = pyqtSignal('PyQt_PyObject')
     
     def __init__(self, min_, max_, float_=False):
-        super(QwordSpinBox, self).__init__()
+        super().__init__()
 
         self._minimum = min_
         self._maximum = max_
         self.int_ = float if float_ else int
 
-        rx = QRegExp('-?\d{0,20}(?:\.\d{0,20})?' if float_ else '-?\d{0,20}')
+        rx = QRegExp(r'-?\d{0,20}(?:\.\d{0,20})?' if float_ else r'-?\d{0,20}')
         validator = QRegExpValidator(rx, self)
 
         self._lineEdit = QLineEdit(self)
@@ -272,7 +271,7 @@ class ProtobufItem(QTreeWidgetItem):
     
     def lazy_initialize(self):
         for ds in self.ds.message_type.fields:
-            ProtobufItem(self, ds, self.app, self.path + [ds.full_name])
+            ProtobufItem(self, ds, self.app, [*self.path, ds.full_name])
         del self.expanded
     
     """
@@ -303,11 +302,11 @@ class ProtobufItem(QTreeWidgetItem):
                 item_indices[id(self.self_pb)].append(self)
         
         if val or (unvoid and val is not None):
-            if type(val) == bool:
+            if isinstance(val, bool):
                 self.widget.setChecked(val)
-            elif type(val) == str:
+            elif isinstance(val, str):
                 self.widget.setText(val)
-            elif type(val) == bytes:
+            elif isinstance(val, bytes):
                 self.widget.setText(val.decode('latin1').encode('unicode_escape').decode('latin1'))
             else:
                 self.widget.setValue(val)
@@ -552,9 +551,9 @@ class ProtobufItem(QTreeWidgetItem):
             if self.full_name.startswith(cur_name + msg.name + '.'):
                 for j, field in enumerate(msg.field):
                     if cur_name + msg.name + '.' + field.name == self.full_name:
-                        return path + [i, 2, j, 1]
+                        return [*path, i, 2, j, 1]
                 
-                return self.find_path_for_field(msg.nested_type, path + [i, 3], cur_name + msg.name)
+                return self.find_path_for_field(msg.nested_type, [*path, i, 3], cur_name + msg.name)
     
     def _edit(self, ev=None):
         if not self.widget.hasFocus():

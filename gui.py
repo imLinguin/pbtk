@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-#-*- encoding: Utf-8 -*-
 from PyQt5.QtWidgets import QApplication, QListWidgetItem, QDesktopWidget, QFileDialog, QInputDialog, QProgressDialog, QMessageBox, QFileSystemModel, QHeaderView
 from PyQt5.QtCore import Qt, QUrl, pyqtSignal, QThread
 from PyQt5.QtGui import QDesktopServices, QTextOption
@@ -173,7 +172,7 @@ class PBTKGUI(QApplication):
             self.create_endpoint.pbRespCombo.clear()
             
             has_msgs = False
-            for name, cls in load_proto_msgs(path):
+            for name, _ in load_proto_msgs(path):
                 has_msgs = True
                 if not getattr(self, 'only_resp_combo', False):
                     self.create_endpoint.pbRequestCombo.addItem(name, (path, name))
@@ -195,7 +194,7 @@ class PBTKGUI(QApplication):
                     item = QListWidgetItem(meta['desc'], self.create_endpoint.transports)
                     item.setData(Qt.UserRole, (name, meta.get('ui_data_form')))
             
-            elif getattr(self, 'saved_transport_choice'):
+            elif hasattr(self, 'saved_transport_choice'):
                 self.create_endpoint.transports.setCurrentItem(self.saved_transport_choice)
                 self.pick_transport(self.saved_transport_choice)
                 self.saved_transport_choice = None
@@ -298,7 +297,7 @@ class PBTKGUI(QApplication):
         self.set_view(self.choose_endpoint)
     
     def launch_fuzzer(self, item):
-        if type(item) == int:
+        if isinstance(item, int):
             data, sample_id = self.fuzzer.comboBox.itemData(item)
         else:
             data, sample_id = item.data(Qt.UserRole), 0
@@ -346,7 +345,7 @@ class PBTKGUI(QApplication):
             
             # Fill the request samples combo box if we're loading a new
             # endpoint.
-            if type(item) != int:
+            if not isinstance(item, int):
                 if len(data['request'].get('samples', [])) > 1:
                     self.fuzzer.comboBox.clear()
                     for sample_id, sample in enumerate(data['request']['samples']):
@@ -370,9 +369,11 @@ class PBTKGUI(QApplication):
         entry for the corresponding descriptor.
     """
     
-    def parse_fields(self, msg, base_path=[]):
+    def parse_fields(self, msg, base_path=None):
+        if base_path is None:
+            base_path = []
         for ds, val in msg.ListFields():
-            path = base_path + [ds.full_name]
+            path = [*base_path + ds.full_name]
             
             if ds.label == ds.LABEL_REPEATED:
                 for val_index, val_value in enumerate(val):
