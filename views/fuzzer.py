@@ -1,8 +1,8 @@
 #!/usr/bin/python3
-from PyQt5.QtWidgets import QTreeWidgetItem, QLineEdit, QCheckBox, QAbstractSpinBox, QInputDialog, QMessageBox
-from PyQt5.QtCore import QUrl, Qt, pyqtSignal, QByteArray, QRegExp
-from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtGui import QRegExpValidator
+from PySide6.QtWidgets import QTreeWidgetItem, QLineEdit, QCheckBox, QAbstractSpinBox, QInputDialog, QMessageBox
+from PySide6.QtCore import QUrl, Qt, Signal, QByteArray, QRegularExpression
+from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtGui import QRegularExpressionValidator
 
 from xml.dom.minidom import parseString
 from collections import defaultdict
@@ -135,7 +135,7 @@ class MyFrame(QWebEngineView):
 """
 
 class QwordSpinBox(QAbstractSpinBox):
-    valueChanged = pyqtSignal('PyQt_PyObject')
+    valueChanged = Signal(object)
     
     def __init__(self, min_, max_, float_=False):
         super().__init__()
@@ -144,8 +144,9 @@ class QwordSpinBox(QAbstractSpinBox):
         self._maximum = max_
         self.int_ = float if float_ else int
 
-        rx = QRegExp(r'-?\d{0,20}(?:\.\d{0,20})?' if float_ else r'-?\d{0,20}')
-        validator = QRegExpValidator(rx, self)
+        rx = QRegularExpression(r'-?\d{0,20}(?:\.\d{0,20})?' if float_ else r'-?\d{0,20}')
+        validator = QRegularExpressionValidator(self)
+        validator.setRegularExpression(rx)
 
         self._lineEdit = QLineEdit(self)
         self._lineEdit.setText(str(self.int_(0)))
@@ -176,11 +177,11 @@ class QwordSpinBox(QAbstractSpinBox):
 
     def stepEnabled(self):
         if self.value() > self._minimum and self.value() < self._maximum:
-            return self.StepUpEnabled | self.StepDownEnabled
+            return QAbstractSpinBox.StepEnabledFlag.StepUpEnabled | QAbstractSpinBox.StepEnabledFlag.StepDownEnabled
         elif self.value() <= self._minimum:
-            return self.StepUpEnabled
+            return QAbstractSpinBox.StepEnabledFlag.StepUpEnabled
         elif self.value() >= self._maximum:
-            return self.StepDownEnabled
+            return QAbstractSpinBox.StepEnabledFlag.StepDownEnabled
 
 """
     The ProtobufItem class inherits QTreeWidgetItem and is used to

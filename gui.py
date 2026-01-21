@@ -1,8 +1,8 @@
 #!/usr/bin/python3
-from PyQt5.QtWidgets import QApplication, QListWidgetItem, QDesktopWidget, QFileDialog, QInputDialog, QProgressDialog, QMessageBox, QFileSystemModel, QHeaderView
-from PyQt5.QtCore import Qt, QUrl, pyqtSignal, QThread
-from PyQt5.QtGui import QDesktopServices, QTextOption
-from PyQt5.uic import loadUi
+from PySide6.QtWidgets import QApplication, QListWidgetItem, QFileDialog, QInputDialog, QProgressDialog, QMessageBox, QFileSystemModel, QHeaderView
+from PySide6.QtGui import QDesktopServices, QTextOption
+from PySide6.QtCore import Qt, QUrl, Signal, QThread
+from PySide6.QtUiTools import QUiLoader
 
 from signal import signal, SIGINT, SIG_DFL
 from os.path import dirname, realpath
@@ -16,7 +16,7 @@ from pathlib import Path
 from sys import argv
 
 from utils.common import extractors, transports, BASE_PATH, assert_installed, extractor_save, insert_endpoint, load_proto_msgs
-from views.fuzzer import ProtobufItem, ProtocolDataItem
+from views.fuzzer import ProtobufItem, ProtocolDataItem, MyFrame
 from utils.transports import *
 from extractors import *
 
@@ -34,12 +34,15 @@ class PBTKGUI(QApplication):
         
         views = dirname(realpath(__file__)) + '/views/'
         
-        self.welcome = loadUi(views + 'welcome.ui')
-        self.choose_extractor = loadUi(views + 'choose_extractor.ui')
-        self.choose_proto = loadUi(views + 'choose_proto.ui')
-        self.create_endpoint = loadUi(views + 'create_endpoint.ui')
-        self.choose_endpoint = loadUi(views + 'choose_endpoint.ui')
-        self.fuzzer = loadUi(views + 'fuzzer.ui')
+        loader = QUiLoader()
+        loader.registerCustomWidget(MyFrame)
+        
+        self.welcome = loader.load(views + 'welcome.ui')
+        self.choose_extractor = loader.load(views + 'choose_extractor.ui')
+        self.choose_proto = loader.load(views + 'choose_proto.ui')
+        self.create_endpoint = loader.load(views + 'create_endpoint.ui')
+        self.choose_endpoint = loader.load(views + 'choose_endpoint.ui')
+        self.fuzzer = loader.load(views + 'fuzzer.ui')
 
         self.welcome.step1.clicked.connect(self.load_extractors)
         self.choose_extractor.rejected.connect(partial(self.set_view, self.welcome))
@@ -83,7 +86,7 @@ class PBTKGUI(QApplication):
         self.welcome.mydirBtn.clicked.connect(partial(QDesktopServices.openUrl, QUrl.fromLocalFile(str(BASE_PATH))))
         
         self.set_view(self.welcome)
-        self.exec_()
+        self.exec()
     
     """
         Step 1 - Extract .proto structures from apps
@@ -439,7 +442,8 @@ class PBTKGUI(QApplication):
         view.show()
         self.view = view
         
-        resolution = QDesktopWidget().screenGeometry()
+        screen = self.primaryScreen()
+        resolution = screen.geometry()
         view.move(int((resolution.width() / 2) - (view.frameSize().width() / 2)),
                   int((resolution.height() / 2) - (view.frameSize().height() / 2)))
 
@@ -448,8 +452,8 @@ class PBTKGUI(QApplication):
 """
 
 class Worker(QThread):
-    finished = pyqtSignal(object)
-    progress = pyqtSignal(object, object)
+    finished = Signal(object)
+    progress = Signal(object, object)
 
     def __init__(self, inputs, extractor):
         super().__init__()
