@@ -87,7 +87,7 @@ def assert_installed(win=None, modules=[], binaries=[]):
             msg.append('%s "%s"' % (subject, '", "'.join(names)))
         msg = 'You are missing the %s for this.' % ' and '.join(msg)
         if win:
-            from PyQt5.QtWidgets import QMessageBox
+            from PySide6.QtWidgets import QMessageBox
             QMessageBox.warning(win, ' ', msg)
         else:
             raise ImportError(msg)

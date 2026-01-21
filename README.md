@@ -15,7 +15,7 @@ pbtk (*Protobuf toolkit*) is a full-fledged set of scripts, accessible through a
 
 ## Installation
 
-PBTK requires Python ≥ 3.5, PyQt 5, Python-Protobuf 3, and a handful of executable programs (chromium, jad, dex2jar...) for running extractor scripts.
+PBTK requires Python ≥ 3.5, PySide 6, Python-Protobuf 3, and a handful of executable programs (chromium, jad, dex2jar...) for running extractor scripts.
 
 Archlinux users can install directly through the [package](https://aur.archlinux.org/packages/pbtk-git/):
 
@@ -28,9 +28,9 @@ On most other distributions, you'll want to run it directly:
 
 ```tcl
 # For Ubuntu/Debian testing derivates:
-$ sudo apt install python3-pip git openjdk-8-jre libqt5x11extras5 python3-pyqt5.qtwebengine python3-pyqt5
+$ sudo apt install python3-pip git openjdk-8-jre python3-qtpy-pyside6
 
-$ sudo pip3 install protobuf pyqt5 pyqtwebengine requests websocket-client
+$ sudo pip3 install protobuf requests websocket-client
 
 $ git clone https://github.com/marin-m/pbtk
 $ cd pbtk
@@ -179,7 +179,7 @@ I've tried to do my best to produce thoroughly readable and commented code (exce
 
 ## Licensing
 
-As pbtk uses PyQt, it is released under the [GNU GPL](https://www.gnu.org/licenses/gpl-3.0.html) license (I, hereby, etc.) I would likely have chosen something public domain-like otherwise.
+pbtk is released under the [GNU GPL](https://www.gnu.org/licenses/gpl-3.0.html) license (I, hereby, etc.).
 
 There's no formalized rule for the letter case of the project name, the rule is just about following your heart ❤
 
