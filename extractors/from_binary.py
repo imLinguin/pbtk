@@ -71,10 +71,12 @@ def walk_binary(binr):
         
         # Parse descriptor
         proto = FileDescriptorProto()
-        proto.ParseFromString(binr[start:cursor])
-        
-        # Convert to ascii
-        yield descpb_to_proto(proto)
+        try:
+            proto.ParseFromString(binr[start:cursor])
+            # Convert to ascii
+            yield descpb_to_proto(proto)
+        except Exception:
+            continue
 
 if __name__ == '__main__':
     extractor_main('from_binary')
